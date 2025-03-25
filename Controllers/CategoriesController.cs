@@ -42,6 +42,17 @@ namespace ECommerceCatalog.Controllers
             return Ok(categoryById);
         }
 
+        // GET api/categories/name/{name}
+        [HttpGet("name/{name}")]
+        public async Task<ActionResult<Category>> GetCategoryByName(string name)
+        {
+            var category = await _categoryService.GetCategoryByNameAsync(name);
+
+            if (category == null) return NotFound();
+
+            return Ok(category);
+        }
+
         // Update: api/Categories/5
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCategory(int id, [FromBody] Category categoryToUpdate)
