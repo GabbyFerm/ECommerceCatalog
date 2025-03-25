@@ -20,6 +20,7 @@ namespace ECommerceCatalog
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IReviewService, ReviewService>();
+            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             // Register the DbContext with the DI container
             builder.Services.AddDbContext<EcommerceCatalogContext>(options =>

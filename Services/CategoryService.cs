@@ -20,10 +20,17 @@ namespace ECommerceCatalog.Services
             return await _context.Categories.ToListAsync();
         }
 
-        // Get a category by id
+        // Get category by id
         public async Task<Category?> GetCategoryByIdAsync(int id)
         {
             return await _context.Categories.FindAsync(id);
+        }
+
+        // Get category by name
+        public async Task<Category?> GetCategoryByNameAsync(string name)
+        {
+            return await _context.Categories
+                .FirstOrDefaultAsync(category => category.Name.ToLower() == name.ToLower());
         }
 
         // Create a category

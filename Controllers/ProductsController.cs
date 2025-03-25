@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ECommerceCatalog.Models;
 using ECommerceCatalog.Services;
+using ECommerceCatalog.DTOs;
+using AutoMapper;
 
 namespace ECommerceCatalog.Controllers
 {
@@ -15,10 +17,14 @@ namespace ECommerceCatalog.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductService _productService;
+        private readonly ICategoryService _categoryService;
+        private readonly IMapper _mapper;
 
-        public ProductsController(IProductService productService)
+        public ProductsController(IProductService productService, ICategoryService categoryService, IMapper mapper)
         {
             _productService = productService;
+            _categoryService = categoryService;
+            _mapper = mapper;
         }
 
         // GET: api/Products
@@ -31,7 +37,7 @@ namespace ECommerceCatalog.Controllers
 
         // GET: api/Products/5
         [HttpGet("{id}")]
-        public async Task<ActionResult> GetProductById(int id)
+        public async Task<ActionResult<ProductDTO>> GetProductById(int id)
         {
             var productById = await _productService.GetProductByIdAsync(id);
 
@@ -40,24 +46,88 @@ namespace ECommerceCatalog.Controllers
             return Ok(productById);
         }
 
+        // GET: api/Products/average rating
+        [HttpGet("{id}/average-rating")]
+        public async Task<ActionResult<ProductDTO>> GetAverageRatingForProduct(int id)
+        {
+            var productDto = await _productService.GetAverageRatingForProductAsync(id);
+
+            if (productDto == null) return NotFound();
+
+            return Ok(productDto);
+        }
+
+        // GET: api/Products/by category 
+        [HttpGet("category/{categoryName}")]
+        public async Task<ActionResult<ProductDTO>> FilterProductsByCategoryName(string categoryName)
+        {
+            var productDto = await _productService.FilterProductsByCategoryNameAsync(categoryName);
+
+            if (productDto == null || !productDto.Any()) return NotFound();
+
+            return Ok(productDto);
+        }
+
         // Update: api/Products/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product productToUpdate)
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDTO productToUpdate)
         {
-            var updatedProduct = await _productService.UpdateProductAsync(id, productToUpdate);
+            // Get the product from the database
+            var product = await _productService.GetProductByIdAsync(id);
 
-            if (updatedProduct == null) return NotFound();
+            if (product == null) return NotFound();
 
-            return Ok(updatedProduct);
+            // Update the product properties
+            product.Name = productToUpdate.Name;
+            product.Price = productToUpdate.Price;
+
+            // Handle Category update (by CategoryName or CategoryId)
+            if (!string.IsNullOrEmpty(productToUpdate.CategoryName))
+            {
+                var category = await _categoryService.GetCategoryByNameAsync(productToUpdate.CategoryName);
+                if (category != null)
+                {
+                    product.Category = category;  // Update the category if found
+                }
+                else
+                {
+                    return BadRequest("Category not found");  // Return a bad request if the category doesn't exist
+                }
+            }
+
+            // Save the updated product
+            var updatedProduct = await _productService.UpdateProductAsync(id, product);
+
+            // If the product was updated successfully, map to DTO
+            var productDto = _mapper.Map<ProductDTO>(updatedProduct);
+            productDto.CategoryName = updatedProduct.Category?.Name; // Safely set CategoryName
+
+            return Ok(productDto);
         }
 
         // Create: api/Products
         [HttpPost]
-        public async Task<ActionResult> CreateProduct(Product productToAdd)
+        public async Task<ActionResult<ProductDTO>> CreateProduct([FromBody] CreateProductDTO request)
         {
-            var newProduct = await _productService.CreateProductAsync(productToAdd);
+            // Check if category exists, or create a new category
+            var category = await _categoryService.GetCategoryByNameAsync(request.CategoryName);
+            if (category == null)
+            {
+                category = new Category { Name = request.CategoryName };
+                await _categoryService.CreateCategoryAsync(category);
+            }
 
-            return Ok(newProduct);
+            // Map CreateProductDTO to Product
+            var product = _mapper.Map<Product>(request);
+            product.CategoryId = category.Id;
+
+            var createdProduct = await _productService.CreateProductAsync(product);
+
+            // Map the created product to ProductDTO
+            var productDto = _mapper.Map<ProductDTO>(createdProduct);
+            productDto.CategoryName = category.Name;
+
+            return Ok(createdProduct);
         }
 
         // DELETE: api/Products/5
