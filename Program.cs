@@ -1,5 +1,6 @@
 using ECommerceCatalog.Models;
 using ECommerceCatalog.Seeders;
+using ECommerceCatalog.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceCatalog
@@ -11,7 +12,14 @@ namespace ECommerceCatalog
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+                });
+            builder.Services.AddScoped<IProductService, ProductService>();
+            builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped<IReviewService, ReviewService>();
 
             // Register the DbContext with the DI container
             builder.Services.AddDbContext<EcommerceCatalogContext>(options =>
