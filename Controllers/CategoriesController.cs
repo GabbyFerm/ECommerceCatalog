@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ECommerceCatalog.Models;
 using ECommerceCatalog.Services;
+using ECommerceCatalog.DTOs;
+using FluentValidation;
 
 namespace ECommerceCatalog.Controllers
 {
@@ -22,7 +24,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // GET: api/Categories
-        [HttpGet]
+        [HttpGet("get-all-categories")]
         public async Task<ActionResult> GetCategories()
         {
             var categories = await _categoryService.GetAllCategoriesAsync();
@@ -32,7 +34,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // GET: api/Categories/5
-        [HttpGet("{id}")]
+        [HttpGet("get-category-by-id")]
         public async Task<ActionResult> GetCategory(int id)
         {
             var categoryById = await _categoryService.GetCategoryByIdAsync(id);
@@ -43,7 +45,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // GET api/categories/name/{name}
-        [HttpGet("name/{name}")]
+        [HttpGet("get-category-by-name")]
         public async Task<ActionResult<Category>> GetCategoryByName(string name)
         {
             var category = await _categoryService.GetCategoryByNameAsync(name);
@@ -54,18 +56,35 @@ namespace ECommerceCatalog.Controllers
         }
 
         // Update: api/Categories/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, [FromBody] Category categoryToUpdate)
+        [HttpPut("update-category")]
+        public async Task<ActionResult<CategoryDTO>> UpdateCategory(int id,[FromBody] UpdateCategoryDTO categoryDto, [FromServices] IValidator<UpdateCategoryDTO> validator)
         {
-            var updatedCategory = await _categoryService.UpdateCategoryAsync(id, categoryToUpdate);
+            var validationResult = await validator.ValidateAsync(categoryDto);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors);
+            }
 
-            if (updatedCategory == null) return NotFound();
+            var existingCategory = await _categoryService.GetCategoryByIdAsync(id);
+            if (existingCategory == null)
+            {
+                return NotFound("Category not found.");
+            }
 
-            return Ok(updatedCategory);
+            existingCategory.Name = categoryDto.Name;
+            var updatedCategory = await _categoryService.UpdateCategoryAsync(id, existingCategory);
+
+            var categoryResponse = new CategoryDTO
+            {
+                Id = updatedCategory.Id,
+                Name = updatedCategory.Name
+            };
+
+            return Ok(categoryResponse);
         }
 
         // Create: api/Categories
-        [HttpPost]
+        [HttpPost("create-category")]
         public async Task<ActionResult> CreateCategory([FromBody] Category categoryToAdd)
         {
             var newCategory = await _categoryService.CreateCategoryAsync(categoryToAdd);
@@ -74,7 +93,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // DELETE: api/Categories/5
-        [HttpDelete("{id}")]
+        [HttpDelete("delete-category-by-id")]
         public async Task<IActionResult> DeleteCategory(int id)
         {
             var categoryToDelete = await _categoryService.DeleteCategoryAsync(id);

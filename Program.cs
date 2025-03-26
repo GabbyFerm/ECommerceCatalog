@@ -17,6 +17,14 @@ namespace ECommerceCatalog
                 {
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
                 });
+<<<<<<< Updated upstream
+=======
+
+            builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
+            builder.Services.AddValidatorsFromAssemblyContaining<CreateProductValidator>();
+            builder.Services.AddValidatorsFromAssemblyContaining<CreateReviewValidator>();
+
+>>>>>>> Stashed changes
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IReviewService, ReviewService>();

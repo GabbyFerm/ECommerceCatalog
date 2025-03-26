@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ECommerceCatalog.Models;
 using ECommerceCatalog.Services;
+using ECommerceCatalog.DTOs;
+using FluentValidation;
 
 namespace ECommerceCatalog.Controllers
 {
@@ -15,14 +17,16 @@ namespace ECommerceCatalog.Controllers
     public class ReviewsController : ControllerBase
     {
         private readonly IReviewService _reviewService;
+        private readonly IProductService _productService;
 
-        public ReviewsController(IReviewService reviewService)
+        public ReviewsController(IReviewService reviewService, IProductService productService)
         {
             _reviewService = reviewService;
+            _productService = productService;
         }
 
         // GET: api/Reviews
-        [HttpGet]
+        [HttpGet("get-all-reviews")]
         public async Task<ActionResult> GetAllReviews()
         {
             var reviews = await _reviewService.GetAllReviewsAsync();
@@ -31,7 +35,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // GET: api/Reviews/5
-        [HttpGet("{id}")]
+        [HttpGet("get-review-by-id")]
         public async Task<ActionResult> GetReviewById(int id)
         {
             var reviewById = await _reviewService.GetReviewByIdAsync(id);
@@ -42,27 +46,61 @@ namespace ECommerceCatalog.Controllers
         }
 
         // PUT: api/Reviews/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateReviewById(int id, [FromBody] Review reviewToUpdate)
+        [HttpPut("update-review-by-id")]
+        public async Task<ActionResult> UpdateReview(int id, [FromBody] UpdateReviewDTO reviewDto, [FromServices] IValidator<UpdateReviewDTO> validator)
         {
-            var updatedReview = await _reviewService.UpdateReviewAsync(id, reviewToUpdate);
+            var validationResult = await validator.ValidateAsync(reviewDto);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors);
+            }
 
-            if (updatedReview == null) return NotFound(); // If update fails, return 404
+            var existingReview = await _reviewService.GetReviewByIdAsync(id);
+            if (existingReview == null)
+            {
+                return NotFound("Review not found.");
+            }
 
-            return Ok(updatedReview); 
+            // Update the existing review
+            existingReview.Rating = reviewDto.Rating;
+            existingReview.Comment = reviewDto.Comment;
+
+            var updatedReview = await _reviewService.UpdateReviewAsync(id, existingReview); 
+
+            return Ok(updatedReview);
         }
 
         // POST: api/Reviews
-        [HttpPost]
-        public async Task<ActionResult> CreateReview([FromBody] Review reviewToAdd)
+        [HttpPost("create-review")]
+        public async Task<ActionResult> CreateReview([FromBody] CreateReviewDTO reviewToAddDto, [FromServices] IValidator<CreateReviewDTO> validator)
         {
-            var newReview = await _reviewService.CreateReviewAsync(reviewToAdd);
+            var validationResult = await validator.ValidateAsync(reviewToAddDto);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors);
+            }
+
+            var product = await _productService.GetProductByIdAsync(reviewToAddDto.ProductId);
+            if (product == null)
+            {
+                return NotFound("Product not found.");
+            }
+
+            var review = new Review
+            {
+                ProductId = reviewToAddDto.ProductId,
+                Rating = reviewToAddDto.Rating,
+                Comment = reviewToAddDto.Comment,
+                Product = product
+            };
+
+            var newReview = await _reviewService.CreateReviewAsync(review);
 
             return Ok(newReview);
         }
 
         // DELETE: api/Reviews/5
-        [HttpDelete("{id}")]
+        [HttpDelete("delete-review")]
         public async Task<IActionResult> DeleteReview(int id)
         {
             var reviewToDelete = await _reviewService.DeleteReviewAsync(id);

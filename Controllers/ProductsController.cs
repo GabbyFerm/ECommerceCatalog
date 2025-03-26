@@ -28,7 +28,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // GET: api/Products
-        [HttpGet]
+        [HttpGet("get-all-products")]
         public async Task<ActionResult> GetProducts()
         {
             var products = await _productService.GetAllProductsAsync();
@@ -36,7 +36,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // GET: api/Products/5
-        [HttpGet("{id}")]
+        [HttpGet("get-product-by-id")]
         public async Task<ActionResult<ProductDTO>> GetProductById(int id)
         {
             var productById = await _productService.GetProductByIdAsync(id);
@@ -47,7 +47,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // GET: api/Products/average rating
-        [HttpGet("{id}/average-rating")]
+        [HttpGet("get-product-average-rating-by-id")]
         public async Task<ActionResult<ProductDTO>> GetAverageRatingForProduct(int id)
         {
             var productDto = await _productService.GetAverageRatingForProductAsync(id);
@@ -58,7 +58,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // GET: api/Products/by category 
-        [HttpGet("category/{categoryName}")]
+        [HttpGet("get-category-by-name")]
         public async Task<ActionResult<ProductDTO>> FilterProductsByCategoryName(string categoryName)
         {
             var productDto = await _productService.FilterProductsByCategoryNameAsync(categoryName);
@@ -69,7 +69,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // Update: api/Products/5
-        [HttpPut("{id}")]
+        [HttpPut("update-product-by-id")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDTO productToUpdate)
         {
             // Get the product from the database
@@ -106,8 +106,13 @@ namespace ECommerceCatalog.Controllers
         }
 
         // Create: api/Products
+<<<<<<< Updated upstream
         [HttpPost]
         public async Task<ActionResult<ProductDTO>> CreateProduct([FromBody] CreateProductDTO request)
+=======
+        [HttpPost("create-product")]
+        public async Task<ActionResult<ProductDTO>> CreateProduct([FromBody] CreateProductDTO request, [FromServices] IValidator<CreateProductDTO> validator)
+>>>>>>> Stashed changes
         {
             // Check if category exists, or create a new category
             var category = await _categoryService.GetCategoryByNameAsync(request.CategoryName);
@@ -131,7 +136,7 @@ namespace ECommerceCatalog.Controllers
         }
 
         // DELETE: api/Products/5
-        [HttpDelete("{id}")]
+        [HttpDelete("delete-product")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var productToDelete = await _productService.DeleteProductAsync(id);
