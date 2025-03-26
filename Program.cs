@@ -24,6 +24,7 @@ namespace ECommerceCatalog
 
             builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
             builder.Services.AddValidatorsFromAssemblyContaining<CreateProductValidator>();
+            builder.Services.AddValidatorsFromAssemblyContaining<CreateReviewValidator>();
 
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();

@@ -33,17 +33,16 @@ namespace ECommerceCatalog.Services
             return newReview;
         }
 
-        public async Task<Review?> UpdateReviewAsync(int id, Review reviewToUpdate) 
-        { 
+        public async Task<Review> UpdateReviewAsync(int id, Review updatedReview)
+        {
             var existingReview = await _context.Reviews.FindAsync(id);
             if (existingReview == null) return null;
 
-            existingReview.Rating = reviewToUpdate.Rating; 
-            existingReview.Comment = reviewToUpdate.Comment;
+            existingReview.Rating = updatedReview.Rating;
+            existingReview.Comment = updatedReview.Comment;
 
             await _context.SaveChangesAsync();
             return existingReview;
-        
         }
 
         public async Task<bool> DeleteReviewAsync(int id) 
