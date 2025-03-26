@@ -9,6 +9,7 @@ using ECommerceCatalog.Models;
 using ECommerceCatalog.Services;
 using ECommerceCatalog.DTOs;
 using AutoMapper;
+using FluentValidation;
 
 namespace ECommerceCatalog.Controllers
 {
@@ -106,15 +107,15 @@ namespace ECommerceCatalog.Controllers
         }
 
         // Create: api/Products
-<<<<<<< Updated upstream
-        [HttpPost]
-        public async Task<ActionResult<ProductDTO>> CreateProduct([FromBody] CreateProductDTO request)
-=======
         [HttpPost("create-product")]
         public async Task<ActionResult<ProductDTO>> CreateProduct([FromBody] CreateProductDTO request, [FromServices] IValidator<CreateProductDTO> validator)
->>>>>>> Stashed changes
         {
-            // Check if category exists, or create a new category
+            var validationResult = await validator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors);
+            }
+
             var category = await _categoryService.GetCategoryByNameAsync(request.CategoryName);
             if (category == null)
             {
@@ -122,17 +123,15 @@ namespace ECommerceCatalog.Controllers
                 await _categoryService.CreateCategoryAsync(category);
             }
 
-            // Map CreateProductDTO to Product
             var product = _mapper.Map<Product>(request);
             product.CategoryId = category.Id;
 
             var createdProduct = await _productService.CreateProductAsync(product);
 
-            // Map the created product to ProductDTO
             var productDto = _mapper.Map<ProductDTO>(createdProduct);
             productDto.CategoryName = category.Name;
 
-            return Ok(createdProduct);
+            return Ok(productDto);
         }
 
         // DELETE: api/Products/5
