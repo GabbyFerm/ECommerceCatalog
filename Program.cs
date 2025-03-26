@@ -2,6 +2,10 @@ using ECommerceCatalog.Models;
 using ECommerceCatalog.Seeders;
 using ECommerceCatalog.Services;
 using Microsoft.EntityFrameworkCore;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using ECommerceCatalog.Validators;
+using ECommerceCatalog.DTOs;
 
 namespace ECommerceCatalog
 {
@@ -17,9 +21,14 @@ namespace ECommerceCatalog
                 {
                     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
                 });
+
+            builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
+            builder.Services.AddValidatorsFromAssemblyContaining<CreateProductValidator>();
+
             builder.Services.AddScoped<IProductService, ProductService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<IReviewService, ReviewService>();
+
             builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             // Register the DbContext with the DI container
